@@ -1,19 +1,24 @@
 import React, { useState } from "react";
 import { IoMdEye, IoMdEyeOff } from "react-icons/io";
 import { FcGoogle } from "react-icons/fc";
+import { FaFacebookF, FaGithub, FaLinkedinIn } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { auth } from "../firebase";
+import { GoogleAuthProvider,FacebookAuthProvider,
+  GithubAuthProvider, signInWithPopup } from "firebase/auth";
 
 export default function SignUp() {
-  const primaryColor = "#ff4d2d";
-  const bgColor = "#fff9f6";
-  const borderColor = "#ddd";
-
-  const serverUrl = "http://localhost:5000"; // ✅ Define server URL
+  const navigate = useNavigate();
+  const serverUrl = "http://localhost:5000";
 
   const [showPassword, setShowPassword] = useState(false);
-  const navigate = useNavigate();
-  const [error, setError] = useState("");
+
+  const [popup, setPopup] = useState({
+    show: false,
+    message: "",
+    type: "",
+  });
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -23,7 +28,7 @@ export default function SignUp() {
     role: "user",
   });
 
-  // Handle Input Change
+  // ================= INPUT CHANGE =================
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -31,18 +36,23 @@ export default function SignUp() {
     });
   };
 
-  // Handle Role Change
+  // ================= ROLE =================
   const handleRoleChange = (role) => {
-    setFormData({
-      ...formData,
-      role: role,
-    });
+    setFormData({ ...formData, role });
   };
 
-  // Handle Submit
+  // ================= POPUP AUTO CLOSE =================
+  const showPopup = (message, type) => {
+    setPopup({ show: true, message, type });
+
+    setTimeout(() => {
+      setPopup({ show: false, message: "", type: "" });
+    }, 2000);
+  };
+
+  // ================= NORMAL SIGNUP =================
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
 
     if (
       !formData.fullName ||
@@ -50,178 +60,173 @@ export default function SignUp() {
       !formData.mobile ||
       !formData.password
     ) {
-      setError("All fields are required");
-      return;
+      return showPopup("All fields required", "error");
     }
 
     try {
-      const response = await axios.post(
-        `${serverUrl}/api/auth/signup`,
-        formData,
-        { withCredentials: true }
-      );
-
-      console.log(response.data);
-
-      alert("Signup successful!");
-
-      // Reset form
-      setFormData({
-        fullName: "",
-        email: "",
-        mobile: "",
-        password: "",
-        role: "user",
+      const res = await axios.post(`${serverUrl}/api/auth/signup`, formData, {
+        withCredentials: true,
       });
 
-      // Redirect to login
-      navigate("/signin");
+      localStorage.setItem("user", JSON.stringify(res.data.user));
 
+      showPopup("Signup Successful", "success");
+
+      setTimeout(() => {
+        navigate("/");
+      }, 1500);
     } catch (err) {
-      setError(
-        err.response?.data?.message || "Server error. Please try again."
-      );
+      showPopup(err.response?.data?.message || "Signup Failed", "error");
     }
   };
 
+  // ================= GOOGLE AUTH =================
+
+  const handleGoogleAuth = async () => {
+    const provider = new GoogleAuthProvider();
+    const result = await signInWithPopup(auth, provider);
+    console.log(result);
+  };
+
+  // =================== Facebook Auth ============
+  const handleFacebookAuth = async() =>{
+    const provider = new FacebookAuthProvider();
+    const result = await signInWithPopup(auth,provider);
+    console.log(result);
+  }
+  // =================== Github Auth ============
+  const handleGithubAuth = async() =>{
+    const provider = new FacebookAuthProvider();
+    const result = await signInWithPopup(auth,provider);
+    console.log(result);
+  }
+  // =================== Facebook Auth ============
+  const handleLinkedInAuth = async() =>{
+    const provider = new FacebookAuthProvider();
+    const result = await signInWithPopup(auth,provider);
+    console.log(result);
+  }
+
   return (
-    <div
-      className="min-h-screen flex items-center justify-center p-4 w-full"
-      style={{ backgroundColor: bgColor }}
-    >
-      <div
-        className="bg-white rounded-xl shadow-lg w-full max-w-md p-8 border"
-        style={{ borderColor: borderColor }}
-      >
-        <h1 className="text-3xl font-bold mb-2" style={{ color: primaryColor }}>
-          Vingo
+    <div className="min-h-screen flex justify-center items-center bg-orange-50">
+      {/* POPUP */}
+      {popup.show && (
+        <div
+          className={`fixed top-5 right-5 text-white px-5 py-2 rounded shadow-lg
+          ${popup.type === "success" ? "bg-green-500" : "bg-red-500"}`}
+        >
+          {popup.message}
+        </div>
+      )}
+
+      {/* CARD */}
+      <div className="bg-white p-8 rounded-xl shadow w-[400px]">
+        <h1 className="text-3xl font-bold text-orange-500 mb-4 text-center">
+          Vingo Signup
         </h1>
 
-        <p className="text-gray-600 mb-6">
-          Create your account to get started with delicious food delivery
-        </p>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <input
+            id="fullName"
+            value={formData.fullName}
+            placeholder="Full Name"
+            className="input w-full border p-2 rounded"
+            onChange={handleChange}
+          />
 
-        <form onSubmit={handleSubmit}>
-          {/* Full Name */}
-          <div className="mb-4">
-            <label className="block text-gray-700 font-medium mb-1">
-              Full Name
-            </label>
+          <input
+            id="email"
+            type="email"
+            value={formData.email}
+            placeholder="Email"
+            className="input w-full border p-2 rounded"
+            onChange={handleChange}
+          />
+
+          <input
+            id="mobile"
+            type="tel"
+            value={formData.mobile}
+            placeholder="Mobile"
+            className="input w-full border p-2 rounded"
+            onChange={handleChange}
+          />
+
+          {/* PASSWORD */}
+          <div className="relative">
             <input
-              type="text"
-              id="fullName"
-              value={formData.fullName}
+              type={showPassword ? "text" : "password"}
+              id="password"
+              value={formData.password}
+              placeholder="Password"
+              className="input w-full border p-2 rounded"
               onChange={handleChange}
-              className="w-full py-2 px-3 border rounded-lg focus:outline-none focus:border-orange-500"
-              placeholder="Enter your full name"
             />
+
+            <button
+              type="button"
+              className="absolute right-3 top-3"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <IoMdEyeOff /> : <IoMdEye />}
+            </button>
           </div>
 
-          {/* Email */}
-          <div className="mb-4">
-            <label className="block text-gray-700 font-medium mb-1">
-              Email
-            </label>
-            <input
-              type="email"
-              id="email"
-              value={formData.email}
-              onChange={handleChange}
-              className="w-full py-2 px-3 border rounded-lg focus:outline-none focus:border-orange-500"
-              placeholder="Enter your email"
-            />
-          </div>
-
-          {/* Mobile */}
-          <div className="mb-4">
-            <label className="block text-gray-700 font-medium mb-1">
-              Mobile
-            </label>
-            <input
-              type="text"
-              id="mobile"
-              value={formData.mobile}
-              onChange={handleChange}
-              className="w-full py-2 px-3 border rounded-lg focus:outline-none focus:border-orange-500"
-              placeholder="Enter your mobile number"
-            />
-          </div>
-
-          {/* Password */}
-          <div className="mb-4">
-            <label className="block text-gray-700 font-medium mb-1">
-              Password
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                id="password"
-                value={formData.password}
-                onChange={handleChange}
-                className="w-full py-2 px-3 border rounded-lg focus:outline-none focus:border-orange-500 pr-10"
-                placeholder="Enter your password"
-              />
+          {/* ROLE */}
+          <div className="flex gap-2">
+            {["user", "owner", "deliveryBoy"].map((r) => (
               <button
                 type="button"
-                className="absolute right-3 top-2.5 text-gray-500"
-                onClick={() => setShowPassword(!showPassword)}
+                key={r}
+                onClick={() => handleRoleChange(r)}
+                className={`flex-1 p-2 rounded capitalize transition
+                ${formData.role === r ? "bg-orange-500 text-white" : "border"}`}
               >
-                {showPassword ? <IoMdEyeOff size={20} /> : <IoMdEye size={20} />}
+                {r}
               </button>
-            </div>
+            ))}
           </div>
 
-          {/* Role */}
-          <div className="mb-4">
-            <label className="block text-gray-700 font-medium mb-2">
-              Select Role
-            </label>
-            <div className="flex gap-2">
-              {["user", "owner", "deliveryBoy"].map((r) => (
-                <button
-                  type="button"
-                  key={r}
-                  onClick={() => handleRoleChange(r)}
-                  className={`w-full py-2 rounded-lg border transition ${
-                    formData.role === r
-                      ? "bg-orange-500 text-white border-orange-500"
-                      : "bg-white text-gray-700 border-gray-300"
-                  }`}
-                >
-                  {r}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Error */}
-          {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
-
-          <button
-            type="submit"
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded-lg transition duration-300"
-          >
+          <button className="w-full bg-orange-500 hover:bg-orange-600 text-white p-2 rounded">
             Sign Up
           </button>
+        </form>
 
+        {/* SOCIAL SIGNUP */}
+        <div className="w-full mt-4 flex justify-center gap-4">
+          {/* Google */}
           <button
-            type="button"
-            className="w-full flex items-center justify-center gap-2 border border-gray-300 py-2 px-4 rounded-lg hover:bg-gray-100 transition duration-300 mt-2"
+            onClick={handleGoogleAuth}
+            className="p-3 border rounded-full hover:bg-gray-100 transition"
           >
-            <FcGoogle size={20} />
-            <span>Sign Up with Google</span>
+            <FcGoogle size={22} />
           </button>
 
-          <p
-            className="text-center mt-6 cursor-pointer"
-            onClick={() => navigate("/signin")}
-          >
-            Already have an account?{" "}
-            <span className="text-orange-500 hover:underline">
-              Sign In
-            </span>
-          </p>
-        </form>
+          {/* Facebook */}
+          <button onClick={handleFacebookAuth}
+          className="p-3 border rounded-full bg-blue-600 text-white hover:bg-blue-700 transition">
+            <FaFacebookF size={18} />
+          </button>
+
+          {/* LinkedIn */}
+          <button  onClick={handleLinkedInAuth}
+           className="p-3 border rounded-full bg-blue-500 text-white hover:bg-blue-600 transition">
+            <FaLinkedinIn size={18} />
+          </button>
+
+          {/* GitHub */}
+          <button onClick={handleGithubAuth} 
+           className="p-3 border rounded-full bg-gray-900 text-white hover:bg-black transition">
+            <FaGithub size={20} />
+          </button>
+        </div>
+        <p
+          className="text-center mt-6 cursor-pointer"
+          onClick={() => navigate("/signin")}
+        >
+          Don't have an account?{" "}
+          <span className="text-orange-500 hover:underline">Sign In</span>
+        </p>
       </div>
     </div>
   );

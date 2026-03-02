@@ -1,144 +1,207 @@
 import React, { useState } from "react";
-import { IoArrowBack, IoArrowForward } from "react-icons/io5";
+import axios from "axios";
+import { IoArrowBack } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 
 export default function ForgotPassword() {
+
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  const navigate = useNavigate();
+  // ✅ Popup State
+  const [popup, setPopup] = useState({
+    show: false,
+    message: "",
+    type: ""
+  });
 
-  const resetAll = () => {
-    setStep(1);
-    setEmail("");
-    setOtp("");
-    setNewPassword("");
-    setConfirmPassword("");
+  const navigate = useNavigate();
+  const serverUrl = "http://localhost:5000";
+
+  // ✅ Popup Function
+  const showPopup = (message, type = "success") => {
+    setPopup({ show: true, message, type });
+
+    setTimeout(() => {
+      setPopup({ show: false, message: "", type: "" });
+    }, 2000);
+  };
+
+  // ================= SEND OTP =================
+  const handleSendOTP = async () => {
+    try {
+      await axios.post(
+        `${serverUrl}/api/auth/send-otp`,
+        { email },
+        { withCredentials: true }
+      );
+
+      showPopup("OTP Sent Successfully ✅");
+      setStep(2);
+
+    } catch (error) {
+      showPopup(
+        error.response?.data?.message || "Failed to send OTP ❌",
+        "error"
+      );
+    }
+  };
+
+  // ================= VERIFY OTP =================
+  const handleVerifyOtp = async () => {
+    try {
+      await axios.post(
+        `${serverUrl}/api/auth/verify-otp`,
+        { email, otp },
+        { withCredentials: true }
+      );
+
+      showPopup("OTP Verified ✅");
+      setStep(3);
+
+    } catch (error) {
+      showPopup("Invalid OTP ❌", "error");
+    }
+  };
+
+  // ================= RESET PASSWORD =================
+  const handleResetPassword = async () => {
+
+    if (newPassword !== confirmPassword) {
+      showPopup("Passwords do not match ⚠️", "error");
+      return;
+    }
+
+    try {
+      await axios.post(
+        `${serverUrl}/api/auth/reset-password`,
+        {
+          email,
+          newPassword,
+        },
+        { withCredentials: true }
+      );
+
+      showPopup("Password Reset Successful ✅");
+
+      setTimeout(() => {
+        navigate("/signin");
+      }, 2000);
+
+    } catch (error) {
+      showPopup("Password reset failed ❌", "error");
+    }
   };
 
   return (
-    <div className="flex w-full items-center justify-center min-h-screen p-4 bg-[#fff9f6]">
-      <div className="bg-white rounded-xl shadow-lg w-full max-w-md p-8 border border-gray-200 relative">
+    <div className="flex w-full items-center justify-center min-h-screen bg-[#fff9f6]">
 
-        {/* Back Arrow (Top Left) */}
+      <div className="bg-white rounded-xl shadow-lg w-full max-w-md p-8 relative">
+
         {step > 1 && (
           <button
             onClick={() => setStep(step - 1)}
-            className="absolute left-4 top-4 text-gray-600 hover:text-orange-500"
+            className="absolute left-4 top-4"
           >
             <IoArrowBack size={22} />
           </button>
         )}
 
-        <h1 className="text-3xl font-bold mb-2 text-orange-500 text-center">
+        <h1 className="text-3xl font-bold text-orange-500 text-center">
           Vingo
         </h1>
-        <p className="text-gray-600 mb-2 text-center">
-          Reset your password
-        </p>
 
-        {/* Step Indicator */}
-        <p className="text-sm text-gray-400 text-center mb-6">
+        <p className="text-center text-gray-500 mb-6">
           Step {step} of 3
         </p>
 
         {/* STEP 1 */}
         {step === 1 && (
-          <div>
-            <label className="block text-gray-700 font-medium mb-1">
-              Email
-            </label>
+          <>
             <input
               type="email"
+              placeholder="Enter Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full py-2 px-3 border rounded-lg focus:outline-none focus:border-orange-500"
-              placeholder="Enter your email"
+              className="w-full border p-2 rounded"
             />
 
             <button
-              onClick={() => email && setStep(2)}
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded-lg transition duration-300 mt-4 flex items-center justify-center gap-2"
+              onClick={handleSendOTP}
+              className="w-full bg-orange-500 text-white p-2 mt-4 rounded"
             >
-              Send OTP <IoArrowForward />
+              Send OTP
             </button>
-
-            <p
-              className="text-center mt-4 text-sm text-gray-500 cursor-pointer hover:text-orange-500"
-              onClick={() => navigate("/signin")}
-            >
-              Back to Sign In
-            </p>
-          </div>
+          </>
         )}
 
         {/* STEP 2 */}
         {step === 2 && (
-          <div>
-            <label className="block text-gray-700 font-medium mb-1">
-              OTP
-            </label>
+          <>
             <input
               type="text"
+              placeholder="Enter OTP"
               value={otp}
               onChange={(e) => setOtp(e.target.value)}
-              className="w-full py-2 px-3 border rounded-lg focus:outline-none focus:border-orange-500"
-              placeholder="Enter OTP"
+              className="w-full border p-2 rounded"
             />
 
             <button
-              onClick={() => otp && setStep(3)}
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded-lg transition duration-300 mt-4 flex items-center justify-center gap-2"
+              onClick={handleVerifyOtp}
+              className="w-full bg-orange-500 text-white p-2 mt-4 rounded"
             >
-              Verify OTP <IoArrowForward />
+              Verify OTP
             </button>
-          </div>
+          </>
         )}
 
         {/* STEP 3 */}
         {step === 3 && (
-          <div>
-            <label className="block text-gray-700 font-medium mb-1">
-              New Password
-            </label>
+          <>
             <input
               type="password"
+              placeholder="New Password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full py-2 px-3 border rounded-lg focus:outline-none focus:border-orange-500"
-              placeholder="Enter new password"
+              className="w-full border p-2 rounded"
             />
 
-            <label className="block text-gray-700 font-medium mb-1 mt-4">
-              Confirm Password
-            </label>
             <input
               type="password"
+              placeholder="Confirm Password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full py-2 px-3 border rounded-lg focus:outline-none focus:border-orange-500"
-              placeholder="Confirm new password"
+              className="w-full border p-2 rounded mt-3"
             />
 
             <button
-              onClick={() => {
-                if (newPassword === confirmPassword && newPassword !== "") {
-                  alert("Password reset successful!");
-                  resetAll();
-                } else {
-                  alert("Passwords do not match!");
-                }
-              }}
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded-lg transition duration-300 mt-4 flex items-center justify-center gap-2"
+              onClick={handleResetPassword}
+              className="w-full bg-orange-500 text-white p-2 mt-4 rounded"
             >
-              Reset Password <IoArrowForward />
+              Reset Password
             </button>
-          </div>
+          </>
         )}
       </div>
+
+      {/* ✅ SIMPLE POPUP */}
+      {popup.show && (
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50">
+          <div
+            className={`px-6 py-3 rounded-lg shadow-lg text-white font-semibold
+            ${popup.type === "error"
+              ? "bg-red-500"
+              : "bg-green-500"
+            }`}
+          >
+            {popup.message}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

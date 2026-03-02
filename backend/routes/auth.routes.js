@@ -1,5 +1,5 @@
 import express from 'express';
-import { signIn, signOut, signUp } from '../controllers/auth.controller.js';
+import { signIn, signOut, signUp, sendOtp, verifyOtp, resetPassword } from '../controllers/auth.controller.js';
 
 const authRouter = express.Router();
 
@@ -12,6 +12,20 @@ authRouter.post('/signin',signIn)
 // ============ SignOut Routes ===================
 authRouter.get('/signout',signOut)
 
+
+
+// ============ SendOTP Routes ===================
+authRouter.post('/send-otp',sendOtp)
+
+
+
+// ============ VerifyOTP Routes ===================
+authRouter.post('/verify-otp',verifyOtp)
+
+
+
+// ============ Reset Password Routes ===================
+authRouter.post('/reset-password',resetPassword)
 
 
 export default authRouter;
